@@ -5,7 +5,7 @@ entity registerSet is
         clk             : in     vl_logic;
         reset           : in     vl_logic;
         regWrite        : in     vl_logic;
-        decOut          : in     vl_logic_vector(8 downto 0);
+        decOut          : in     vl_logic_vector(7 downto 0);
         writeData       : in     vl_logic_vector(15 downto 0);
         outR0           : out    vl_logic_vector(15 downto 0);
         outR1           : out    vl_logic_vector(15 downto 0);

@@ -51,7 +51,7 @@ module register16bit( input clk, input reset, input regWrite, input decOut1b, in
 	D_ff d15(clk, reset, regWrite, decOut1b, writeData[15], outR[15]);
 endmodule
 
-module registerSet( input clk, input reset, input regWrite, input [8:0] decOut, input [15:0] writeData,  output [15:0] outR0,outR1,outR2,outR3,outR4,outR5,outR6,outR7);
+module registerSet( input clk, input reset, input regWrite, input [7:0] decOut, input [15:0] writeData,  output [15:0] outR0,outR1,outR2,outR3,outR4,outR5,outR6,outR7);
 		register16bit r0 (clk, reset, 1'b0, decOut[0] , writeData , outR0 );
 		register16bit r1 (clk, reset, regWrite, decOut[1] , writeData , outR1 );
 		register16bit r2 (clk, reset, regWrite, decOut[2] , writeData , outR2 );
@@ -143,14 +143,14 @@ module Mem(input clk, input reset,input memWrite,input memRead, input [15:0] pc,
 	
 	decoder4to16 dec0( pc[4:1], decOut);
 	
-	register_Mem r0(clk,reset,memWrite,decOut[0],16'b 101_0000_1000_01111,dataIn,Qout0); //addi $r8,$r0,15
-	register_Mem r1(clk,reset,memWrite,decOut[1],16'b 101_0000_0101_00101,dataIn,Qout1); //addi $r5,$r0,5
-	register_Mem r2(clk,reset,memWrite,decOut[2],16'b 101_0000_0010_00010,dataIn,Qout2); //addi $r2,$r0,2
-	register_Mem r3(clk,reset,memWrite,decOut[3],16'b 101_0000_0000_00000,dataIn,Qout3); //addi $r0,$r0,0
+	register_Mem r0(clk,reset,memWrite,decOut[0],16'b 00011_10_101_000_111,dataIn,Qout0); //addi #5,$r0,$r7
+	register_Mem r1(clk,reset,memWrite,decOut[1],16'b 00011_10_000_010_101,dataIn,Qout1); //addi #0,$r2,$r5
+	register_Mem r2(clk,reset,memWrite,decOut[2],16'b 000_1111_0010_10110,dataIn,Qout2); //subi #1,$r2,$r6
+	register_Mem r3(clk,reset,memWrite,decOut[3],16'b 000_1111_1110_00000,dataIn,Qout3); //subi #7,$r0,$r0
 	
-	register_Mem r4(clk,reset,memWrite,decOut[4],16'b 001_1000_1000_00000,dataIn,Qout4); //mul $r8,$r8
-	register_Mem r5(clk,reset,memWrite,decOut[5],16'b 100_0000_0000_01001,dataIn,Qout5); //mflo $r9
-	register_Mem r6(clk,reset,memWrite,decOut[6],16'b 000_0101_0101_01010,dataIn,Qout6); //add $r10,$r5,$r5
+	register_Mem r4(clk,reset,memWrite,decOut[4],16'b 000_0000_0000_00000,dataIn,Qout4); //mul $r8,$r8
+	register_Mem r5(clk,reset,memWrite,decOut[5],16'b 000_0000_0000_00000,dataIn,Qout5); //mflo $r9
+	register_Mem r6(clk,reset,memWrite,decOut[6],16'b 000_0101_0101_0000,dataIn,Qout6); //add $r10,$r5,$r5
 	register_Mem r7(clk,reset,memWrite,decOut[7],16'b 101_0000_0100_00100,dataIn,Qout7);  //addi $r4,$r0,4
 	
 	register_Mem r8(clk,reset,memWrite,decOut[8],16'b 111_0000_0101_00000,dataIn,Qout8); //sw $r5,$r0(0)
@@ -224,39 +224,55 @@ module IF_ID(input clk, input reset,input regWrite, input decOut1b,input [15:0] 
 endmodule
 
 module ID_EX(input clk, input reset,input regWrite, input decOut1b,input [15:0] regOut1,input [15:0] regOut2,
-  input [15:0] sExtOut, input [2:0] ctr_Rd, input ctr_aluSrcA, input [1:0] ctr_aluSrcB,input [1:0] ctr_aluOp,input ctr_regWrite, input[1:0] ctr_toReg,
-  output [15:0] p1_regOut1,output [15:0] p1_regOut2,output [15:0] p1_sExtOut,output [2:0] p1_Rd, output  p1_aluSrcA,output [1:0] p1_aluSrcB,
+  input [15:0] sExtOut, input [2:0] ctr_Rd, input [1:0] ctr_aluSrcA, input ctr_aluSrcB,input [1:0] ctr_aluOp,input ctr_regWrite, input[1:0] ctr_toReg,
+  output [15:0] p1_regOut1,output [15:0] p1_regOut2,output [15:0] p1_sExtOut,output [2:0] p1_Rd, output [1:0]  p1_aluSrcA,output p1_aluSrcB,
   output [1:0] p1_aluOp, output p1_regWrite, output[1:0] p1_toReg);
 
   register16bit regout1_reg(clk,reset,regWrite,decOut1b,regOut1,p1_regOut1);
   register16bit regout2_reg(clk,reset,regWrite,decOut1b,regOut2,p1_regOut2);
   register16bit sext_reg(clk,reset,regWrite,decOut1b,sExtOut,p1_sExtOut);
-  register1bit aluSrcA_reg(clk, reset, regWrite, decOut1b, ctr_aluSrcA, p1_aluSrcA);
+  register2bit aluSrcA_reg(clk, reset, regWrite, decOut1b, ctr_aluSrcA, p1_aluSrcA);
   register3bit Rd_reg (clk, reset, regWrite, decOut1b, ctr_Rd, p1_Rd);
-  register2bit aluSrcB_reg(clk,reset,regWrite,decOut1b,ctr_aluSrcB,p1_aluSrcB);
+  register1bit aluSrcB_reg(clk,reset,regWrite,decOut1b,ctr_aluSrcB,p1_aluSrcB);
   register2bit aluop_reg(clk,reset,regWrite,decOut1b,ctr_aluOp,p1_aluOp);
   register1bit regwrite_reg(clk,reset,regWrite,decOut1b,ctr_regWrite,p1_regWrite);
   register2bit toreg_reg(clk,reset,regWrite,decOut1b,ctr_toReg,p1_toReg);
 	  
 endmodule
 
-/* module EX_MEM(input clk, input reset,input regWrite, input decOut1b,
-   input [15:0] aluOut,input [15:0] p1_regOut2,input [3:0] mux4bOut,input p1_regWrite, input[1:0] p1_toReg,
-	output [15:0] p2_aluOut, output [15:0] p2_regOut2,output[3:0] p2_mux4bOut, output p2_regWrite, output[1:0] p2_toReg );
+module EX_MEM(input clk, input reset,input regWrite, input decOut1b,
+   input [15:0] aluOut,input [2:0] p1_Rd, input p1_regWrite, input[1:0] p1_toReg,
+	output [15:0] p2_aluOut, output [2:0] p2_Rd, output p2_regWrite, output[1:0] p2_toReg );
 	
-	//Write your code here
-	register16bit hiout_reg(clk,reset,regWrite,decOut1b,hiOut,p2_hiOut);
-	register16bit loout_reg(clk,reset,regWrite,decOut1b,loOut,p2_loOut);
-	register16bit aluout_reg(clk,reset,regWrite,decOut1b,aluOut,p2_aluOut);
-	register16bit p1regout2_reg(clk,reset,regWrite,decOut1b,p1_regOut2,p2_regOut2);
-	register4bit mux4bout_reg(clk,reset,regWrite,decOut1b,mux4bOut,p2_mux4bOut);
-	register1bit p1memread_reg(clk,reset,regWrite,decOut1b,p1_memRead,p2_memRead);
-  register1bit p1memwrite_reg(clk,reset,regWrite,decOut1b,p1_memWrite,p2_memWrite);
+  register16bit aluout_reg(clk,reset,regWrite,decOut1b,aluOut,p2_aluOut);
   register1bit p1regwrite_reg(clk,reset,regWrite,decOut1b,p1_regWrite,p2_regWrite);
   register2bit p1toreg_reg(clk,reset,regWrite,decOut1b,p1_toReg,p2_toReg);
-	
+  register3bit Rd_reg (clk, reset, regWrite, decOut1b, p1_Rd, p2_Rd) ;
+  
 endmodule
- */
+
+module MEM_WB(input clk, input reset,input regWrite, input decOut1b,
+   input [15:0] p2_aluOut,input [2:0] p2_Rd, input p2_regWrite, input[1:0] p2_toReg,
+	output [15:0] p3_aluOut, output [2:0] p3_Rd, output p3_regWrite, output[1:0] p3_toReg );
+	
+  register16bit aluout_reg(clk,reset,regWrite,decOut1b,p2_aluOut,p3_aluOut);
+  register1bit p1regwrite_reg(clk,reset,regWrite,decOut1b,p2_regWrite,p3_regWrite);
+  register2bit p1toreg_reg(clk,reset,regWrite,decOut1b,p2_toReg,p3_toReg);
+  register3bit Rd_reg (clk, reset, regWrite, decOut1b, p2_Rd, p3_Rd) ;
+  
+endmodule
+
+module ALU( input [15:0] AluIn1, input [15:0] AluIn2, input [1:0] AluOp, output reg [15:0] AluOut);
+	always @(AluIn1, AluIn2, AluOp)
+	begin
+	if (AluOp == 2'b10)
+		AluOut = AluIn1 + AluIn2;
+	else if (AluOp == 2'b11)
+		AluOut = AluIn1 - AluIn2;
+	else if (AluOp == 2'b01)
+		AluOut = AluIn1 & AluIn2;
+	end
+endmodule
 
 module ctrlCkt	( input [4:0] opcode, input [1:0] funcField, output reg immSrc, output reg regSrcB, output reg regDestB, output reg [1:0] aluSrcA, output reg aluSrcB, output reg [1:0] aluOp,output reg regWrite, output reg[1:0] toReg);
 	
@@ -268,7 +284,7 @@ module ctrlCkt	( input [4:0] opcode, input [1:0] funcField, output reg immSrc, o
 	// aluSrcB = 0 for Rd and 1 for Imm.
 	// toReg :- To write to register, 00 and to writeto memory 01
 	// aluOp is equal to funcField for Add and Sub, for cmp it is 11 and for and it is 01.
-	always@(opcode)
+	always@(opcode, funcField)
 	begin
 	  case(opcode)
 	      5'b00011: begin immSrc = 0; regDestB = 0; aluSrcA = 2'b00; aluSrcB = 1; aluOp = funcField; regWrite = 1; toReg = 2'b00; end
@@ -289,7 +305,7 @@ module signExt(input [2:0] immShort, input [7:0] immLong, input immSrc, output r
 	end
 endmodule 
 
-module mux2to1 (input [16:0] inp1, input [16:0] inp2, input sel, output reg [15:0] muxOut );
+module mux2to1 (input [2:0] inp1, input [2:0] inp2, input sel, output reg [2:0] muxOut );
 	always @(inp1, inp2, sel)
 	begin
 		if (sel == 1'b0)
@@ -299,7 +315,17 @@ module mux2to1 (input [16:0] inp1, input [16:0] inp2, input sel, output reg [15:
 	end
 endmodule
 
-module mux3to1 (input [16:0] inp1,inp2, inp3, input [1:0] sel, output reg [15:0] muxOut);
+module mux2to1_16 (input [15:0] inp1, input [15:0] inp2, input sel, output reg [15:0] muxOut );
+	always @(inp1, inp2, sel)
+	begin
+		if (sel == 1'b0)
+			muxOut = inp1;
+		else 
+			muxOut = inp2;
+	end
+endmodule
+
+module mux3to1 (input [15:0] inp1,inp2, inp3, input [1:0] sel, output reg [15:0] muxOut);
 	always @(inp1, inp2, inp3, sel)
 	begin
 		if (sel == 2'b00)
@@ -311,3 +337,47 @@ module mux3to1 (input [16:0] inp1,inp2, inp3, input [1:0] sel, output reg [15:0]
 	end
 endmodule
 
+module processor(input clk, input reset, output [15:0] Result);
+
+	wire [15:0] PCAdd, PCResult, insMemOut, insFetchOut, sextOut, outBusA, outBusB, p1_outBusA, p1_outBusB, p1_sextOut, AluKaOutput;
+	wire [15:0] p2_aluKaOutput, p3_aluKaOutput, aluTempB;
+	wire immSrc, regSrcB, regDestB, aluSrcB, regWrite, p1_aluSrcB, p1_regWrite, p2_regWrite, p3_regWrite;
+	wire [1:0] aluSrcA, aluOp, toReg, p1_aluSrcA, p1_aluOp, p1_toReg, p2_toReg, p3_toReg;
+	wire [2:0] regDestMuxOut, regSrcBMuxOut, p1_Rd, p2_Rd, p3_Rd;
+	
+	register16bit registerPC(clk,reset,1'b1,1'b1,PCAdd,PCResult);
+	pcAdder pcAdd(PCResult,PCAdd);
+	Mem mem(clk,reset,1'b0,1'b1, PCResult, 16'd0,insMemOut );
+	ctrlCkt	ctrl(insMemOut[15:11],insMemOut[10:9], immSrc, regSrcB, regDestB, aluSrcA, aluSrcB, aluOp, regWrite, toReg);
+	IF_ID if_id(clk, reset,1'b1, 1'b1,insMemOut, insFetchOut);
+	mux2to1 regDestMux(insFetchOut[2:0], insFetchOut[10:8], regDestB, regDestMuxOut);
+	mux2to1 regSrcBMux(insFetchOut[5:3], insFetchOut[2:0], regSrcB, regSrcBMuxOut);
+	signExt sext(insFetchOut[8:6], insFetchOut[7:0], immSrc, sextOut );
+	registerFile regFile(clk, reset, regWrite, insFetchOut[5:3], regSrcBMuxOut,regDestMuxOut, Result,outBusA, outBusB );
+	ID_EX id_ex(clk, reset, 1'b1, 1'b1,outBusA, outBusB,sextOut, regDestMuxOut, aluSrcA, aluSrcB, aluOp,regWrite, toReg,
+	p1_outBusA, p1_outBusB, p1_sextOut,p1_Rd, p1_aluSrcA, p1_aluSrcB,p1_aluOp,p1_regWrite, p1_toReg);
+	
+	mux2to1_16 regTempMux (p1_outBusB, p1_sextOut, p1_aluSrcB, aluTempB);
+	ALU alu( p1_outBusA, aluTempB, p1_aluOp, AluKaOutput);
+	EX_MEM ex_mem(clk, reset, 1'b1, 1'b1, AluKaOutput, p1_Rd, p1_regWrite, p1_toReg, p2_aluKaOutput, p2_Rd, p2_regWrite, p2_toReg );
+	MEM_WB mem_wb(clk, reset,1'b1, 1'b1, p2_aluKaOutput, p2_Rd, p2_regWrite, p2_toReg, Result, p3_Rd, p3_regWrite, p3_toReg );
+	
+endmodule
+
+module processorKiTestBench;
+	reg clk;
+	reg reset;
+	wire [15:0] Result;
+	processor uut (.clk(clk), .reset(reset), .Result(Result));
+
+	always
+	#5 clk=~clk;
+	
+	initial
+	begin
+		clk=0; reset=1;
+		#10  reset=0;	
+		
+		#210 $finish; 
+	end
+endmodule
