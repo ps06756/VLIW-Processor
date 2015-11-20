@@ -150,8 +150,8 @@ module Mem(input clk, input reset,input memWrite,input memRead, input [15:0] pc,
 	
 	register_Mem r4(clk,reset,memWrite,decOut[4],16'b 00011_10_110_111_000,dataIn,Qout4); //addi #-2 $r7,$r0    -5   
 	register_Mem r5(clk,reset,memWrite,decOut[5],16'b 00011_11_110_111_000,dataIn,Qout5); //subi #-2 $r7 $r0    -1
-	register_Mem r6(clk,reset,memWrite,decOut[6],16'b 000_0101_0101_0000,dataIn,Qout6); //add $r10,$r5,$r5
-	register_Mem r7(clk,reset,memWrite,decOut[7],16'b 101_0000_0100_00100,dataIn,Qout7);  //addi $r4,$r0,4
+	register_Mem r6(clk,reset,memWrite,decOut[6],16'b 01000_01100_010_110,dataIn,Qout6);  // and  $r2 $r6 $r2   0  
+	register_Mem r7(clk,reset,memWrite,decOut[7],16'b 01000_01100_111_110,dataIn,Qout7);  // and $r7 $r6 $r6    -1
 	
 	register_Mem r8(clk,reset,memWrite,decOut[8],16'b 111_0000_0101_00000,dataIn,Qout8); //sw $r5,$r0(0)
 	register_Mem r9(clk,reset,memWrite,decOut[9],16'b 010_1000_0010_00000,dataIn,Qout9); //div $r8,$r2
@@ -378,6 +378,6 @@ module processorKiTestBench;
 		clk=0; reset=1;
 		#10  reset=0;	
 		
-		#90 $finish; 
+		#120 $finish; 
 	end
 endmodule
