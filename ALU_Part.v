@@ -143,13 +143,13 @@ module Mem(input clk, input reset,input memWrite,input memRead, input [15:0] pc,
 	
 	decoder4to16 dec0( pc[4:1], decOut);
 	
-	register_Mem r0(clk,reset,memWrite,decOut[0],16'b 00011_10_101_000_111,dataIn,Qout0); //addi #5,$r0,$r7
-	register_Mem r1(clk,reset,memWrite,decOut[1],16'b 00011_10_000_010_101,dataIn,Qout1); //addi #0,$r2,$r5
-	register_Mem r2(clk,reset,memWrite,decOut[2],16'b 000_1111_0010_10110,dataIn,Qout2); //subi #1,$r2,$r6
-	register_Mem r3(clk,reset,memWrite,decOut[3],16'b 000_1111_1110_00000,dataIn,Qout3); //subi #7,$r0,$r0
+	register_Mem r0(clk,reset,memWrite,decOut[0],16'b 00011_10_101_000_111,dataIn,Qout0); //addi #-3,$r0,$r7 = -3
+	register_Mem r1(clk,reset,memWrite,decOut[1],16'b 00011_10_000_010_101,dataIn,Qout1); //addi #0,$r2,$r5  = 0
+	register_Mem r2(clk,reset,memWrite,decOut[2],16'b 00011_11_001_010_110,dataIn,Qout2); //subi #1,$r2,$r6   = -1
+	register_Mem r3(clk,reset,memWrite,decOut[3],16'b 00011_11_111_000_000,dataIn,Qout3); //subi #-1,$r0,$r0  = +1
 	
-	register_Mem r4(clk,reset,memWrite,decOut[4],16'b 000_0000_0000_00000,dataIn,Qout4); //mul $r8,$r8
-	register_Mem r5(clk,reset,memWrite,decOut[5],16'b 000_0000_0000_00000,dataIn,Qout5); //mflo $r9
+	register_Mem r4(clk,reset,memWrite,decOut[4],16'b 00011_10_110_111_000,dataIn,Qout4); //addi #-2 $r7,$r0    -5   
+	register_Mem r5(clk,reset,memWrite,decOut[5],16'b 00011_11_110_111_000,dataIn,Qout5); //subi #-2 $r7 $r0    -1
 	register_Mem r6(clk,reset,memWrite,decOut[6],16'b 000_0101_0101_0000,dataIn,Qout6); //add $r10,$r5,$r5
 	register_Mem r7(clk,reset,memWrite,decOut[7],16'b 101_0000_0100_00100,dataIn,Qout7);  //addi $r4,$r0,4
 	
@@ -287,7 +287,7 @@ module ctrlCkt	( input [4:0] opcode, input [1:0] funcField, output reg immSrc, o
 	always@(opcode, funcField)
 	begin
 	  case(opcode)
-	      5'b00011: begin immSrc = 0; regDestB = 0; aluSrcA = 2'b00; aluSrcB = 1; aluOp = funcField; regWrite = 1; toReg = 2'b00; end
+	      5'b00011: begin immSrc = 0; regSrcB = 0 ; regDestB = 0; aluSrcA = 2'b00; aluSrcB = 1; aluOp = funcField; regWrite = 1; toReg = 2'b00; end
 	      5'b01000: begin regDestB = 0; regSrcB = 0; aluSrcA = 2'b01; aluSrcB = 0; aluOp = 2'b01; regWrite = 1; toReg = 2'b00; end
 	      5'b00111: begin immSrc = 1; regSrcB = 1; regDestB = 1; aluSrcA = 2'b10 ; aluSrcB = 1; aluOp = 2'b11; regWrite = 0; end
 	  endcase
@@ -340,7 +340,7 @@ endmodule
 module processor(input clk, input reset, output [15:0] Result);
 
 	wire [15:0] PCAdd, PCResult, insMemOut, insFetchOut, sextOut, outBusA, outBusB, p1_outBusA, p1_outBusB, p1_sextOut, AluKaOutput;
-	wire [15:0] p2_aluKaOutput, p3_aluKaOutput, aluTempB;
+	wire [15:0] p2_aluKaOutput, p3_aluKaOutput, aluTempB, teeninputwalamux;
 	wire immSrc, regSrcB, regDestB, aluSrcB, regWrite, p1_aluSrcB, p1_regWrite, p2_regWrite, p3_regWrite;
 	wire [1:0] aluSrcA, aluOp, toReg, p1_aluSrcA, p1_aluOp, p1_toReg, p2_toReg, p3_toReg;
 	wire [2:0] regDestMuxOut, regSrcBMuxOut, p1_Rd, p2_Rd, p3_Rd;
@@ -348,17 +348,17 @@ module processor(input clk, input reset, output [15:0] Result);
 	register16bit registerPC(clk,reset,1'b1,1'b1,PCAdd,PCResult);
 	pcAdder pcAdd(PCResult,PCAdd);
 	Mem mem(clk,reset,1'b0,1'b1, PCResult, 16'd0,insMemOut );
-	ctrlCkt	ctrl(insMemOut[15:11],insMemOut[10:9], immSrc, regSrcB, regDestB, aluSrcA, aluSrcB, aluOp, regWrite, toReg);
+	ctrlCkt	ctrl(insFetchOut[15:11],insFetchOut[10:9], immSrc, regSrcB, regDestB, aluSrcA, aluSrcB, aluOp, regWrite, toReg);
 	IF_ID if_id(clk, reset,1'b1, 1'b1,insMemOut, insFetchOut);
 	mux2to1 regDestMux(insFetchOut[2:0], insFetchOut[10:8], regDestB, regDestMuxOut);
 	mux2to1 regSrcBMux(insFetchOut[5:3], insFetchOut[2:0], regSrcB, regSrcBMuxOut);
 	signExt sext(insFetchOut[8:6], insFetchOut[7:0], immSrc, sextOut );
-	registerFile regFile(clk, reset, regWrite, insFetchOut[5:3], regSrcBMuxOut,regDestMuxOut, Result,outBusA, outBusB );
+	registerFile regFile(clk, reset, p3_regWrite, insFetchOut[5:3], regSrcBMuxOut,p3_Rd, Result,outBusA, outBusB );
 	ID_EX id_ex(clk, reset, 1'b1, 1'b1,outBusA, outBusB,sextOut, regDestMuxOut, aluSrcA, aluSrcB, aluOp,regWrite, toReg,
 	p1_outBusA, p1_outBusB, p1_sextOut,p1_Rd, p1_aluSrcA, p1_aluSrcB,p1_aluOp,p1_regWrite, p1_toReg);
-	
+	mux3to1 threetoonemux(p1_outBusA,p1_outBusB,p1_outBusB,p1_aluSrcA, teeninputwalamux);
 	mux2to1_16 regTempMux (p1_outBusB, p1_sextOut, p1_aluSrcB, aluTempB);
-	ALU alu( p1_outBusA, aluTempB, p1_aluOp, AluKaOutput);
+	ALU alu( teeninputwalamux, aluTempB, p1_aluOp, AluKaOutput);
 	EX_MEM ex_mem(clk, reset, 1'b1, 1'b1, AluKaOutput, p1_Rd, p1_regWrite, p1_toReg, p2_aluKaOutput, p2_Rd, p2_regWrite, p2_toReg );
 	MEM_WB mem_wb(clk, reset,1'b1, 1'b1, p2_aluKaOutput, p2_Rd, p2_regWrite, p2_toReg, Result, p3_Rd, p3_regWrite, p3_toReg );
 	
@@ -378,6 +378,6 @@ module processorKiTestBench;
 		clk=0; reset=1;
 		#10  reset=0;	
 		
-		#210 $finish; 
+		#90 $finish; 
 	end
 endmodule
