@@ -9,10 +9,14 @@ entity MEM_WB is
         p2_aluOut       : in     vl_logic_vector(15 downto 0);
         p2_Rd           : in     vl_logic_vector(2 downto 0);
         p2_regWrite     : in     vl_logic;
-        p2_toReg        : in     vl_logic_vector(1 downto 0);
+        memoryKaOutput  : in     vl_logic_vector(7 downto 0);
+        p2_regWriteNeeche: in     vl_logic;
+        p2_RdNeecheWaala: in     vl_logic_vector(2 downto 0);
         p3_aluOut       : out    vl_logic_vector(15 downto 0);
         p3_Rd           : out    vl_logic_vector(2 downto 0);
         p3_regWrite     : out    vl_logic;
-        p3_toReg        : out    vl_logic_vector(1 downto 0)
+        p3_memoryKaOutput: out    vl_logic_vector(7 downto 0);
+        p3_regWriteNeeche: out    vl_logic;
+        p3_RdNeecheWaala: out    vl_logic_vector(2 downto 0)
     );
 end MEM_WB;

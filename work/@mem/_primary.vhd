@@ -8,6 +8,6 @@ entity Mem is
         memRead         : in     vl_logic;
         pc              : in     vl_logic_vector(15 downto 0);
         dataIn          : in     vl_logic_vector(15 downto 0);
-        IR              : out    vl_logic_vector(15 downto 0)
+        IR              : out    vl_logic_vector(31 downto 0)
     );
 end Mem;
