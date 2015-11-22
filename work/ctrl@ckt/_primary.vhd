@@ -15,6 +15,7 @@ entity ctrlCkt is
         regWriteNeeche  : out    vl_logic;
         signExtNeeche   : out    vl_logic_vector(1 downto 0);
         memRead         : out    vl_logic;
-        memWrite        : out    vl_logic
+        memWrite        : out    vl_logic;
+        pcmux           : out    vl_logic_vector(1 downto 0)
     );
 end ctrlCkt;
