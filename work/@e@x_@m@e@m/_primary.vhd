@@ -15,6 +15,8 @@ entity EX_MEM is
         p1_memWrite     : in     vl_logic;
         p1_RdNeecheWaala: in     vl_logic_vector(2 downto 0);
         p1_regWriteNeecheWaala: in     vl_logic;
+        p1_outBusA      : in     vl_logic_vector(15 downto 0);
+        p1_outBusB      : in     vl_logic_vector(15 downto 0);
         p2_aluOut       : out    vl_logic_vector(15 downto 0);
         p2_Rd           : out    vl_logic_vector(2 downto 0);
         p2_regWrite     : out    vl_logic;
@@ -23,6 +25,8 @@ entity EX_MEM is
         p2_memRead      : out    vl_logic;
         p2_memWrite     : out    vl_logic;
         p2_RdNeecheWaala: out    vl_logic_vector(2 downto 0);
-        p2_regWriteNeecheWaala: out    vl_logic
+        p2_regWriteNeecheWaala: out    vl_logic;
+        p2_outBusA      : out    vl_logic_vector(15 downto 0);
+        p2_outBusB      : out    vl_logic_vector(15 downto 0)
     );
 end EX_MEM;

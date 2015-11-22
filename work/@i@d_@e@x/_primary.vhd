@@ -6,6 +6,7 @@ entity ID_EX is
         reset           : in     vl_logic;
         regWrite        : in     vl_logic;
         decOut1b        : in     vl_logic;
+        insFetchOutput  : in     vl_logic_vector(15 downto 0);
         regOut1         : in     vl_logic_vector(15 downto 0);
         regOut2         : in     vl_logic_vector(15 downto 0);
         sExtOut         : in     vl_logic_vector(15 downto 0);
@@ -33,6 +34,7 @@ entity ID_EX is
         p1_regOut4      : out    vl_logic_vector(15 downto 0);
         p1_sExtOutNeecheWaala: out    vl_logic_vector(15 downto 0);
         p1_RdNeecheWaala: out    vl_logic_vector(2 downto 0);
-        p1_regWriteNeeche: out    vl_logic
+        p1_regWriteNeeche: out    vl_logic;
+        p1_insFetchOutput: out    vl_logic_vector(15 downto 0)
     );
 end ID_EX;

@@ -245,7 +245,7 @@ module Mem(input clk, input reset,input memWrite,input memRead, input [15:0] pc,
        
         register_Mem r0(clk,reset,memWrite,decOut[0],16'b 00011_10_101_000_100,dataIn,Qout0); //addi #-3,$r0,$r4 = -3
         register_Mem r1(clk,reset,memWrite,decOut[1],16'b 01101_00001_000_101,dataIn,Qout1); //load  $r0(1), $r5
-        register_Mem r2(clk,reset,memWrite,decOut[2],16'b 00011_11_001_010_111,dataIn,Qout2); //subi #1,$r2,$r7   = -1
+        register_Mem r2(clk,reset,memWrite,decOut[2],16'b 00011_11_001_100_111,dataIn,Qout2); //subi #1,$r4,$r7   = -4
         register_Mem r3(clk,reset,memWrite,decOut[3],16'b 01101_00100_000_110,dataIn,Qout3); // load  $r0(4), $r6
        
         register_Mem r4(clk,reset,memWrite,decOut[4],16'b 00011_10_101_010_111,dataIn,Qout4); //addi #-3,$r2,$r7 = -3
@@ -356,7 +356,7 @@ module IF_ID(input clk, input reset,input regWrite, input decOut1b,input [31:0] 
        
 endmodule
  
-module ID_EX(input clk, input reset,input regWrite, input decOut1b,input [15:0] regOut1,input [15:0] regOut2,
+module ID_EX(input clk, input reset,input regWrite, input decOut1b,input [15:0] insFetchOutput, input [15:0] regOut1,input [15:0] regOut2,
                         input [15:0] sExtOut, input [2:0] ctr_Rd, input [1:0] ctr_aluSrcA, input ctr_aluSrcB,
                         input [1:0] ctr_aluOp,input ctr_regWrite,input [15:0] PC, input [15:0] regOut3,
                         input [15:0] regOut4, input [15:0] sExtOutNeecheWaala, input [2:0] RdNeecheWaala, input regWriteNeeche,
@@ -364,11 +364,12 @@ module ID_EX(input clk, input reset,input regWrite, input decOut1b,input [15:0] 
                         output [2:0] p1_Rd, output [1:0]  p1_aluSrcA,output p1_aluSrcB,
                         output [1:0] p1_aluOp, output p1_regWrite, output [15:0] p1_PC,
                         output [15:0] p1_regOut3, output [15:0] p1_regOut4, output [15:0] p1_sExtOutNeecheWaala,
-                    output [2:0] p1_RdNeecheWaala, output p1_regWriteNeeche);
+                    output [2:0] p1_RdNeecheWaala, output p1_regWriteNeeche, output [15:0] p1_insFetchOutput);
  
   register16bit regout1_reg(clk,reset,regWrite,decOut1b,regOut1,p1_regOut1);
   register16bit regout2_reg(clk,reset,regWrite,decOut1b,regOut2,p1_regOut2);
   register16bit sext_reg(clk,reset,regWrite,decOut1b,sExtOut,p1_sExtOut);
+  register16bit fetchOut_reg(clk,reset,regWrite,decOut1b,insFetchOutput,p1_insFetchOutput);
   register2bit aluSrcA_reg(clk, reset, regWrite, decOut1b, ctr_aluSrcA, p1_aluSrcA);
   register3bit Rd_reg (clk, reset, regWrite, decOut1b, ctr_Rd, p1_Rd);
   register1bit aluSrcB_reg(clk,reset,regWrite,decOut1b,ctr_aluSrcB,p1_aluSrcB);
@@ -387,9 +388,10 @@ module EX_MEM(input clk, input reset,input regWrite, input decOut1b,
    input [15:0] aluOut,input [2:0] p1_Rd, input p1_regWrite,
    input [15:0] p1_outBusD, input [15:0] AluKaOutputNeeche, input p1_memRead, input p1_memWrite,
    input [2:0] p1_RdNeecheWaala, input p1_regWriteNeecheWaala,
+   input [15:0] p1_outBusA,input [15:0] p1_outBusB,
         output [15:0] p2_aluOut, output [2:0] p2_Rd, output p2_regWrite,
    output [15:0] p2_outBusD, output [15:0] p2_AluKaOutputNeeche, output p2_memRead, output p2_memWrite,
-        output [2:0] p2_RdNeecheWaala, output p2_regWriteNeecheWaala);
+        output [2:0] p2_RdNeecheWaala, output p2_regWriteNeecheWaala,output [15:0] p2_outBusA,output [15:0] p2_outBusB);
        
   register16bit aluout_reg(clk,reset,regWrite,decOut1b,aluOut,p2_aluOut);
   register1bit p1regwrite_reg(clk,reset,regWrite,decOut1b,p1_regWrite,p2_regWrite);
@@ -400,13 +402,16 @@ module EX_MEM(input clk, input reset,input regWrite, input decOut1b,
   register1bit memWrite_reg(clk,reset,regWrite,decOut1b,p1_memWrite,p2_memWrite);
   register3bit RdNeecheWaala_reg(clk,reset,regWrite,decOut1b,p1_RdNeecheWaala,p2_RdNeecheWaala);
   register1bit regWriteNeeche_reg(clk,reset,regWrite,decOut1b,p1_regWriteNeecheWaala,p2_regWriteNeecheWaala);
+  register16bit outBusA_reg(clk,reset,regWrite,decOut1b,p1_outBusA,p2_outBusA);
+  register16bit outBusB_reg(clk,reset,regWrite,decOut1b,p1_outBusB,p2_outBusB);
 endmodule
  
 module MEM_WB(input clk, input reset,input regWrite, input decOut1b,
    input [15:0] p2_aluOut,input [2:0] p2_Rd, input p2_regWrite,
         input [7:0] memoryKaOutput, input p2_regWriteNeeche, input [2:0] p2_RdNeecheWaala,
+                input [15:0] p2_outBusA,input [15:0] p2_outBusB,
         output [15:0] p3_aluOut, output [2:0] p3_Rd, output p3_regWrite,
-        output [7:0] p3_memoryKaOutput, output p3_regWriteNeeche, output [2:0] p3_RdNeecheWaala);
+        output [7:0] p3_memoryKaOutput, output p3_regWriteNeeche, output [2:0] p3_RdNeecheWaala,output [15:0] p3_outBusA,output [15:0] p3_outBusB);
        
   register16bit aluout_reg(clk,reset,regWrite,decOut1b,p2_aluOut,p3_aluOut);
   register1bit p1regwrite_reg(clk,reset,regWrite,decOut1b,p2_regWrite,p3_regWrite);
@@ -414,6 +419,8 @@ module MEM_WB(input clk, input reset,input regWrite, input decOut1b,
   register8bit memory_Reg (clk, reset, regWrite, decOut1b, memoryKaOutput, p3_memoryKaOutput) ;
   register1bit p2_regWriteNeeche_reg(clk, reset, regWrite, decOut1b, p2_regWriteNeeche, p3_regWriteNeeche) ;
   register3bit p2_RdNeecheWaala_reg(clk, reset, regWrite, decOut1b, p2_RdNeecheWaala, p3_RdNeecheWaala) ;
+  register16bit outBusA_reg(clk,reset,regWrite,decOut1b,p2_outBusA,p3_outBusA);
+  register16bit outBusB_reg(clk,reset,regWrite,decOut1b,p2_outBusB,p3_outBusB);
  
 endmodule
  
@@ -534,7 +541,7 @@ module mux3to1 (input [15:0] inp1,inp2, inp3, input [1:0] sel, output reg [15:0]
                         muxOut = inp3;
         end
 endmodule
-
+ 
 module PCMux3to1 (input [15:0] inp1,inp2, inp3, input [1:0] sel, output reg [15:0] muxOut);
         always @(inp1, inp2, inp3, sel)
         begin
@@ -546,27 +553,51 @@ module PCMux3to1 (input [15:0] inp1,inp2, inp3, input [1:0] sel, output reg [15:
                         muxOut = inp1;
         end
 endmodule
-
+ 
+module forwardingUnit(input [2:0] presentRs,input [2:0] presentRt, input [2:0] exmemRd, input [2:0] memwbRd,input exmemregwrite, input memwbregwrite,output reg [1:0] muxsourcea);
+always@(presentRs,presentRt,exmemRd,memwbRd,exmemregwrite,memwbregwrite)
+begin
+        if(exmemregwrite == 1 && exmemRd == presentRs)
+                muxsourcea = 2'b01;
+        else
+        begin
+                if( memwbregwrite == 1 && memwbRd == presentRs)
+                        muxsourcea = 2'b10;
+                else
+                        muxsourcea = 2'b00;
+        end
+       /*  if(exmemregwrite == 1 && exmemRd == presentRt)
+                muxsourceb = 2'b01;
+        else
+        begin
+                if( memwbregwrite == 1 && memwbRd == presentRt)
+                        muxsourceb = 2'b10;
+                else
+                        muxsourceb = 2'b00;
+        end */
+end
+endmodule
+ 
 module processor(input clk, input reset, output [15:0] Result, output [7:0] Result2, output reg [31:0]  memoryOutput);
  
         wire [15:0] PCAdd, PCResult, sextOut, insFetchOut, insFetchOutNeeche, outBusA, outBusB, p1_outBusA, p1_outBusB, p1_sextOut, AluKaOutput;
         wire [15:0] p2_aluKaOutput, p3_aluKaOutput, aluTempB, teeninputwalamux, PCResultOutput;
-        wire [15:0] outBusC, outBusD, signExtModuleOutput, p1_outBusC, p1_outBusD, p1_signExtModuleOutput;
-        wire [15:0] p1_PCOut, execAdderKaOutput, p2_outBusD, p2_execAdderKaOutput,pcmuxkaOutput,PCBranch;
+        wire [15:0] outBusC, outBusD, signExtModuleOutput, p1_outBusC, p1_outBusD, p1_signExtModuleOutput,p2_outBusA,p2_outBusB,fout1,fout2,p3_outBusA,p3_outBusB;
+        wire [15:0] p1_PCOut, execAdderKaOutput, p2_outBusD, p2_execAdderKaOutput,pcmuxkaOutput,PCBranch, p1_insFetchOut;
         wire immSrc, regSrcB, regDestB, aluSrcB, regWrite, p1_aluSrcB, p1_regWrite, p2_regWrite, p3_regWrite;
         wire regWriteNeeche, memRead, memWrite, p1_regWriteNeeche, p2_memRead, p2_memWrite, p2_regWriteNeeche;
         wire p3_regWriteNeeche;
-        wire [1:0] aluSrcA, aluOp, toReg, p1_aluSrcA, p1_aluOp, p1_toReg, p2_toReg, p3_toReg, signExtNeeche,pcmux;
+        wire [1:0] aluSrcA, aluOp, toReg, p1_aluSrcA, p1_aluOp, p1_toReg, p2_toReg, p3_toReg, signExtNeeche,pcmux,fmuxsourcea,fmuxsourceb;
         wire [2:0] regDestMuxOut, regSrcBMuxOut, p1_Rd, p2_Rd, p3_Rd,p1_RdNeeche, p2_RdNeeche, p3_RdNeeche;
         wire [31:0] MemorykaOutput, insMemOut;
         wire [7:0] dataMemOut;
-                wire [3:0] flags;
+        wire [3:0] flags;
        
         always @(insMemOut)
         begin
                 memoryOutput = insMemOut;
         end
-                // Here my pcadder adds 4 to value in PCResult and store it in PCAdd , my mux selects between PCAdd, PCJump and PCBranch and store it in pcmuxkaoutput, which is stored in register
+        // Here my pcadder adds 4 to value in PCResult and store it in PCAdd , my mux selects between PCAdd, PCJump and PCBranch and store it in pcmuxkaoutput, which is stored in register
         pcAdder pcAdd(PCResult,PCAdd);
         PCMux3to1 pcwaalamux(PCAdd,PCResultOutput + (signExtModuleOutput<<1),PCBranch,pcmux,pcmuxkaOutput);
         register16bit registerPC(clk,reset,1'b1,1'b1,pcmuxkaOutput,PCResult);
@@ -587,23 +618,26 @@ module processor(input clk, input reset, output [15:0] Result, output [7:0] Resu
                                                  outBusA, outBusB, outBusC,outBusD );
         signExtModule signExtM(insFetchOutNeeche[10:6], insFetchOutNeeche[10:0], insFetchOutNeeche[7:0],
                                                   signExtNeeche, signExtModuleOutput);
-        ID_EX id_ex(clk, reset, 1'b1, 1'b1,outBusA, outBusB,sextOut, regDestMuxOut, aluSrcA, aluSrcB, aluOp,regWrite,
+        ID_EX id_ex(clk, reset, 1'b1, 1'b1, insFetchOut,outBusA, outBusB,sextOut, regDestMuxOut, aluSrcA, aluSrcB, aluOp,regWrite,
                                 PCResultOutput, outBusC, outBusD, signExtModuleOutput, insFetchOutNeeche[2:0], regWriteNeeche,
                                 p1_outBusA, p1_outBusB, p1_sextOut,p1_Rd, p1_aluSrcA, p1_aluSrcB,p1_aluOp,p1_regWrite,
-                p1_PCOut, p1_outBusC, p1_outBusD, p1_signExtModuleOutput, p1_RdNeeche, p1_regWriteNeeche);
+                p1_PCOut, p1_outBusC, p1_outBusD, p1_signExtModuleOutput, p1_RdNeeche, p1_regWriteNeeche, p1_insFetchOut);
         mux3to1 threetoonemux(p1_outBusA,p1_outBusB,p1_outBusB,p1_aluSrcA, teeninputwalamux);
         mux2to1_16 regTempMux (p1_outBusB, p1_sextOut, p1_aluSrcB, aluTempB);
-               
-        ALU alu( teeninputwalamux, aluTempB, p1_aluOp, AluKaOutput,flags);
+        //This is Forwarding Unit
+        forwardingUnit thisisforwarding(p1_insFetchOut[5:3],p1_insFetchOut[5:3],p2_Rd,p3_Rd,p2_regWrite,p3_regWrite,fmuxsourcea);   
+        mux3to1 for_fmuxsourcea(teeninputwalamux,p2_aluKaOutput,p3_outBusA,fmuxsourcea,fout1);
+       // mux3to1 for_fmuxsourceb(aluTempB,p2_outBusB,p3_outBusB,fmuxsourceb,fout2);
+        ALU alu( fout1, aluTempB, p1_aluOp, AluKaOutput,flags);
                
         adderModule execAdder(p1_outBusC, p1_signExtModuleOutput, execAdderKaOutput);
         EX_MEM ex_mem(clk, reset, 1'b1, 1'b1, AluKaOutput, p1_Rd, p1_regWrite, p1_outBusD,
-                                  execAdderKaOutput, memRead, memWrite, p1_RdNeeche, p1_regWriteNeeche,
+                                  execAdderKaOutput, memRead, memWrite, p1_RdNeeche, p1_regWriteNeeche, p1_outBusA, p1_outBusB,
                                   p2_aluKaOutput, p2_Rd, p2_regWrite, p2_outBusD, p2_execAdderKaOutput,
-                                  p2_memRead, p2_memWrite, p2_RdNeeche, p2_regWriteNeeche);
+                                  p2_memRead, p2_memWrite, p2_RdNeeche, p2_regWriteNeeche,p2_outBusA,p2_outBusB);
         dataMemActual dataMem(clk, reset,p2_memWrite,p2_memRead, p2_execAdderKaOutput, p2_outBusD[7:0] ,dataMemOut );
         MEM_WB mem_wb(clk, reset,1'b1, 1'b1, p2_aluKaOutput, p2_Rd, p2_regWrite,
-                                   dataMemOut, p2_regWriteNeeche, p2_RdNeeche, Result, p3_Rd, p3_regWrite, Result2, p3_regWriteNeeche,p3_RdNeeche );
+                                   dataMemOut, p2_regWriteNeeche, p2_RdNeeche, p2_outBusA, p2_outBusB, Result, p3_Rd, p3_regWrite, Result2, p3_regWriteNeeche,p3_RdNeeche, p3_outBusA, p3_outBusB );
 endmodule
  
  
